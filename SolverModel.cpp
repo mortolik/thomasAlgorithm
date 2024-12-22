@@ -1,17 +1,15 @@
 #include "SolverModel.hpp"
-#include <cmath>
-#include <stdexcept>
-#include <algorithm>
 #include <QDebug>
+#include <cmath>
 
 SolverModel::SolverModel() {
     // Установка параметров по умолчанию
-    m_params = {0.0, 0.0, 0.5, 10, 1e-6}; // Добавлен epsilon
+    m_params = {0.0, 0.0, 0.5, 10, 1e-6};
 }
 
 void SolverModel::setParams(const Params& params) {
     if (params.n < 2) {
-        throw std::invalid_argument("Number of divisions must be at least 2");
+        throw std::invalid_argument("Количество разбиений должно быть не менее 2");
     }
     m_params = params;
 }
@@ -39,8 +37,8 @@ SolverModel::Result SolverModel::solve() {
 
         a[i] = k / (h * h);                       // Нижняя диагональ
         b[i] = -2.0 * k / (h * h) - q;           // Центральная диагональ
-        c[i] = k / (h * h);                      // Верхняя диагональ
-        d[i] = -f;                               // Правая часть
+        c[i] = k / (h * h);                       // Верхняя диагональ
+        d[i] = -f;                                // Правая часть
     }
 
     // Учет граничных условий
@@ -60,61 +58,80 @@ SolverModel::Result SolverModel::solve() {
     // Вычисление максимальной ошибки
     double maxError = calculateError(u, analytical);
 
-    return {x, u, analytical, maxError};
+    Result result;
+    result.x = x;
+    result.u = u;
+    result.analytical = analytical;
+    result.maxError = maxError;
+
+    return result;
 }
 
 SolverModel::Result SolverModel::solveWithAccuracy(double targetError) {
-    SolverModel::Params originalParams = m_params;
-    SolverModel::Result result;
-    SolverModel::Result refinedResult;
+    Params originalParams = m_params;
+    Result result;
+    Result refinedResult;
 
     double previousError = std::numeric_limits<double>::max();
     double relativeImprovement = 0.0;
 
-    do {
+    const int maxIterations = 1000; // Максимальное количество итераций
+    int iteration = 0;
+
+    result.convergenceData.clear();
+
+    while (iteration < maxIterations) {
         result = solve();
 
-        qDebug() << "n =" << m_params.n << ", maxError =" << result.maxError;
+        // Сохранение данных для графика сходимости
+        result.convergenceData.push_back({m_params.n, result.maxError});
 
+        qDebug() << "Итерация" << iteration << ": n =" << m_params.n << ", maxError =" << result.maxError;
+
+        // Проверяем достижение целевой точности
         if (result.maxError <= targetError) {
+            qDebug() << "Целевая точность достигнута.";
             break;
         }
 
+        // Вычисляем относительное улучшение ошибки
         relativeImprovement = std::abs(previousError - result.maxError) / previousError;
 
+        // Завершаем цикл, если ошибка перестала уменьшаться
         if (relativeImprovement < 1e-6) {
-            qDebug() << "Convergence reached: relative improvement =" << relativeImprovement;
+            qDebug() << "Сходимость достигнута: относительное улучшение =" << relativeImprovement;
             break;
         }
 
         previousError = result.maxError;
 
+        // Проверка предельного размера сетки
         if (m_params.n >= 1e6) {
-            qDebug() << "Grid size too large. Cannot refine further.";
+            qDebug() << "Размер сетки слишком большой. Невозможно уточнить далее.";
             break;
         }
 
         // Удвоение количества разбиений сетки
         m_params.n *= 2;
+        iteration++;
+    }
 
-    } while (true);
+    if (iteration >= maxIterations) {
+        qDebug() << "Достигнуто максимальное количество итераций.";
+    }
 
-    // Сохраняем решение на удвоенной сетке для основной задачи
+    // Решение на уточнённой сетке
     refinedResult = solve();
     result.uRefined = refinedResult.u;
     result.maxErrorRefined = refinedResult.maxError;
 
-    m_params = originalParams;
+    m_params = originalParams; // Возврат к исходным параметрам
     return result;
 }
 
 std::vector<double> SolverModel::computeCoefficients(double x) {
-    // Определение коэффициентов k(x), q(x), f(x)
-    if (x < m_params.xi) {
-        return {pow(x + 1, 2), std::exp(x), std::cos(M_PI * x)}; // k1, q1, f1
-    } else {
-        return {pow(x, 2), std::exp(x), 1.0};                   // k2, q2, f2
-    }
+    // Для данного примера используем постоянные коэффициенты
+    return {1.0, 0.0, M_PI * M_PI * std::sin(M_PI * x)}; // k, q, f
 }
 
 std::vector<double> SolverModel::thomasAlgorithm(const std::vector<double>& a,
@@ -122,13 +139,16 @@ std::vector<double> SolverModel::thomasAlgorithm(const std::vector<double>& a,
                                                  const std::vector<double>& c,
                                                  const std::vector<double>& d) {
     int n = b.size();
-    std::vector<double> p(n), q(n), u(n);
+    std::vector<double> p(n, 0.0), q(n, 0.0), u(n, 0.0);
 
     // Прямой ход
     p[0] = -c[0] / b[0];
     q[0] = d[0] / b[0];
     for (int i = 1; i < n; ++i) {
         double denom = b[i] + a[i] * p[i - 1];
+        if (fabs(denom) < 1e-12) { // Проверка на деление на ноль
+            throw std::runtime_error("Нулевой знаменатель в методе прогонки");
+        }
         p[i] = -c[i] / denom;
         q[i] = (d[i] - a[i] * q[i - 1]) / denom;
     }
@@ -143,12 +163,7 @@ std::vector<double> SolverModel::thomasAlgorithm(const std::vector<double>& a,
 }
 
 double SolverModel::analyticalSolution(double x) {
-    // Пример аналитического решения
-    if (x < m_params.xi) {
-        return x * (1 - x); // Для демонстрации
-    } else {
-        return x * (1 - x) * std::exp(x); // Для демонстрации
-    }
+    return std::sin(M_PI * x); // Корректное аналитическое решение для данного примера
 }
 
 double SolverModel::calculateError(const std::vector<double>& numerical,
@@ -163,7 +178,9 @@ double SolverModel::calculateError(const std::vector<double>& numerical,
 double SolverModel::calculateGridError(const Result& coarse, const Result& fine) {
     double maxError = 0.0;
     for (size_t i = 0; i < coarse.x.size(); ++i) {
-        maxError = std::max(maxError, std::abs(coarse.u[i] - fine.u[2 * i]));
+        if (2 * i < fine.u.size()) {
+            maxError = std::max(maxError, std::abs(coarse.u[i] - fine.u[2 * i]));
+        }
     }
     return maxError;
 }

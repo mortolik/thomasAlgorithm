@@ -18,31 +18,28 @@ class SolverWidget : public QWidget {
 
 public:
     explicit SolverWidget(QWidget* parent = nullptr);
-
-    // Метод для подключения модели
     void setModel(SolverModel* model);
 
 private slots:
-    // Слот для обработки нажатия кнопки "Solve"
     void onSolveButtonClicked();
+    void onHelpButtonClicked();
 
 private:
-    SolverModel* m_model; // Модель для выполнения расчётов
-
-    QSpinBox* m_spinBoxN;       // Спинбокс для ввода количества разбиений
-    QDoubleSpinBox* m_spinBoxEpsilon;       // Спинбокс для ввода количества разбиений
-    QTextEdit* m_infoText;      // Поле для отображения текстовой информации
-    QTableWidget* m_resultsTable; // Таблица для отображения результатов
-    QChartView* m_plot;         // График на основе Qt Charts
-    QChartView* m_errorPlot;         // График на основе Qt Charts
-    QPushButton* m_solveButton; // Кнопка для запуска расчётов
-    QComboBox* m_taskSelector;
-    QTableWidget* m_refinedResultsTable;
-
-    // Метод для отображения результатов
+    void setupUI();
     void displayResults(const SolverModel::Result& result, const SolverModel::Result& refinedResult);
 
-    // Метод для настройки интерфейса
-    void setupUI();
+    SolverModel* m_model;
+
+    QSpinBox* m_spinBoxN;
+    QDoubleSpinBox* m_spinBoxEpsilon;
+    QComboBox* m_taskSelector;
+    QTextEdit* m_infoText;
+    QTableWidget* m_resultsTable;
+    QTableWidget* m_refinedResultsTable; // Новая таблица для уточнённых результатов
+    QtCharts::QChartView* m_plot;
+    QtCharts::QChartView* m_errorPlot;
+    QtCharts::QChartView* m_logErrorPlot; // Новый график для логарифмической зависимости
+    QPushButton* m_solveButton;
+    QPushButton* m_helpButton; // Кнопка справки
 };
 
