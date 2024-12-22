@@ -9,14 +9,18 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    MainTaskWidget.cpp \
     SolverModel.cpp \
     SolverWidget.cpp \
+    TestTaskWidget.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    MainTaskWidget.hpp \
     SolverModel.hpp \
     SolverWidget.hpp \
+    TestTaskWidget.hpp \
     mainwindow.h
 
 FORMS += \

@@ -85,7 +85,6 @@ SolverModel::Result SolverModel::solveWithAccuracy(double targetError) {
 
         // Сохранение данных для графика сходимости
         result.convergenceData.push_back({m_params.n, result.maxError});
-
         qDebug() << "Итерация" << iteration << ": n =" << m_params.n << ", maxError =" << result.maxError;
 
         // Проверяем достижение целевой точности
