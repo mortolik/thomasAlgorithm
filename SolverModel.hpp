@@ -12,10 +12,12 @@ public:
     };
 
     struct Result {
-        std::vector<double> x;  // Узлы сетки
-        std::vector<double> u;  // Численное решение
-        double maxError;        // Максимальная ошибка
+        std::vector<double> x;         // Узлы сетки
+        std::vector<double> u;         // Численное решение
+        std::vector<double> analytical; // Аналитическое решение
+        double maxError;               // Максимальная ошибка
     };
+
 
     SolverModel();
     void setParams(const Params& params);
@@ -32,5 +34,6 @@ private:
     double analyticalSolution(double x); // Аналитическое решение
     double calculateError(const std::vector<double>& numerical,
                           const std::vector<double>& analytical);
+    double calculateGridError(const Result& coarse, const Result& fine);
 };
 

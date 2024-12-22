@@ -59,7 +59,7 @@ SolverModel::Result SolverModel::solve() {
     // Вычисление максимальной ошибки
     double maxError = calculateError(u, analytical);
 
-    return {x, u, maxError};
+    return {x, u, analytical, maxError};
 }
 
 std::vector<double> SolverModel::computeCoefficients(double x) {
@@ -110,6 +110,14 @@ double SolverModel::calculateError(const std::vector<double>& numerical,
     double maxError = 0.0;
     for (size_t i = 0; i < numerical.size(); ++i) {
         maxError = std::max(maxError, std::abs(numerical[i] - analytical[i]));
+    }
+    return maxError;
+}
+
+double SolverModel::calculateGridError(const Result& coarse, const Result& fine) {
+    double maxError = 0.0;
+    for (size_t i = 0; i < coarse.x.size(); ++i) {
+        maxError = std::max(maxError, std::abs(coarse.u[i] - fine.u[2 * i]));
     }
     return maxError;
 }

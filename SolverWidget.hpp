@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QSpinBox>
+#include <QComboBox>
 #include <QtCharts/QChartView>
 #include "SolverModel.hpp"
 
@@ -32,10 +33,11 @@ private:
     QTextEdit* m_infoText;      // Поле для отображения текстовой информации
     QTableWidget* m_resultsTable; // Таблица для отображения результатов
     QChartView* m_plot;         // График на основе Qt Charts
+    QChartView* m_errorPlot;         // График на основе Qt Charts
     QPushButton* m_solveButton; // Кнопка для запуска расчётов
-
+    QComboBox* m_taskSelector;
     // Метод для отображения результатов
-    void displayResults(const SolverModel::Result& result);
+    void displayResults(const SolverModel::Result& result, const SolverModel::Result& refinedResult);
 
     // Метод для настройки интерфейса
     void setupUI();
