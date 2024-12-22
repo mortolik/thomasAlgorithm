@@ -19,8 +19,8 @@ void MainTaskWidget::setModel(SolverModel* model) {
     m_model = model;
 }
 
-void MainTaskWidget::setupUI() {
-    // Инициализация элементов управления
+void MainTaskWidget::setupUI()
+{
     m_spinBoxN = new QSpinBox(this);
     m_spinBoxN->setRange(2, 1000000);
     m_spinBoxN->setValue(10);
@@ -40,7 +40,7 @@ void MainTaskWidget::setupUI() {
     // Создание вкладок для результатов
     m_resultsTabWidget = new QTabWidget(this);
 
-    // Вкладки для таблиц
+    // Вкладка "Tables"
     QWidget* tablesTab = new QWidget();
     QVBoxLayout* tablesLayout = new QVBoxLayout(tablesTab);
 
@@ -54,7 +54,7 @@ void MainTaskWidget::setupUI() {
 
     tablesTab->setLayout(tablesLayout);
 
-    // Вкладки для графиков
+    // Вкладка "Plots"
     QWidget* plotsTab = new QWidget();
     QVBoxLayout* plotsLayout = new QVBoxLayout(plotsTab);
 
@@ -241,6 +241,41 @@ void MainTaskWidget::displayResults(const SolverModel::Result& result, const Sol
             qDebug() << "n:" << data.n << ", error:" << data.error;
         }
 
+        // Создаём логарифмические оси
+        QLogValueAxis* axisX = new QLogValueAxis;
+        axisX->setTitleText("Количество разбиений (n)");
+        axisX->setBase(10);
+        axisX->setMinorTickCount(4);
+        axisX->setLabelFormat("%.0f"); // Целые числа для n
+
+        QLogValueAxis* axisY = new QLogValueAxis;
+        axisY->setTitleText("Ошибка");
+        axisY->setBase(10);
+        axisY->setMinorTickCount(4);
+        axisY->setLabelFormat("%.2e"); // Научная нотация для ошибок
+
+        // Определение диапазона осей
+        double minN = std::numeric_limits<double>::max();
+        double maxN = std::numeric_limits<double>::min();
+        double minError = std::numeric_limits<double>::max();
+        double maxError = std::numeric_limits<double>::min();
+
+        for (const auto& data : result.convergenceData) {
+            if (data.n < minN) minN = data.n;
+            if (data.n > maxN) maxN = data.n;
+            if (data.error < minError) minError = data.error;
+            if (data.error > maxError) maxError = data.error;
+        }
+
+        // Проверка, что минимальные значения не равны бесконечности
+        if (minN == std::numeric_limits<double>::max()) minN = 1;
+        if (minError == std::numeric_limits<double>::max()) minError = 1e-12;
+
+        // Установка диапазона осей
+        axisX->setRange(minN, maxN);
+        axisY->setRange(minError, maxError);
+
+        // Создаём график и серию
         QChart* logErrorChart = new QChart();
         QLineSeries* logErrorSeries = new QLineSeries();
 
@@ -250,23 +285,6 @@ void MainTaskWidget::displayResults(const SolverModel::Result& result, const Sol
 
         logErrorChart->addSeries(logErrorSeries);
         logErrorChart->setTitle("Ошибка vs Количество разбиений (n)");
-
-        // Создаём логарифмические оси
-        QLogValueAxis* axisX = new QLogValueAxis;
-        axisX->setTitleText("Количество разбиений (n)");
-        axisX->setBase(10);
-        axisX->setMinorTickCount(4);
-        // axisX->setTickCount(result.convergenceData.size()); // Удалено
-
-        QLogValueAxis* axisY = new QLogValueAxis;
-        axisY->setTitleText("Ошибка");
-        axisY->setBase(10);
-        axisY->setMinorTickCount(4);
-        // axisY->setTickCount(result.convergenceData.size()); // Удалено
-
-        // Установка диапазона осей (опционально)
-        // axisX->setRange(1, m_model->getMaxN()); // Если есть метод getMaxN()
-        // axisY->setRange(1e-12, 1);
 
         // Добавляем оси к графику
         logErrorChart->addAxis(axisX, Qt::AlignBottom);
@@ -281,6 +299,9 @@ void MainTaskWidget::displayResults(const SolverModel::Result& result, const Sol
         logErrorChart->legend()->hide();
 
         m_logErrorPlot->setChart(logErrorChart);
+
+        // Обновление графика
+        m_logErrorPlot->update();
     }
 }
 

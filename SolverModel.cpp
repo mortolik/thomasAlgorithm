@@ -68,9 +68,10 @@ SolverModel::Result SolverModel::solve() {
 }
 
 SolverModel::Result SolverModel::solveWithAccuracy(double targetError) {
-    Params originalParams = m_params;
-    Result result;
-    Result refinedResult;
+    Params originalParams = m_params; // Сохраняем исходные параметры
+    Result finalResult;              // Итоговый результат
+    Result refinedResult;            // Для уточнённых данных
+    std::vector<ConvergenceData> convergenceData; // Временное хранилище данных о сходимости
 
     double previousError = std::numeric_limits<double>::max();
     double relativeImprovement = 0.0;
@@ -78,18 +79,19 @@ SolverModel::Result SolverModel::solveWithAccuracy(double targetError) {
     const int maxIterations = 1000; // Максимальное количество итераций
     int iteration = 0;
 
-    result.convergenceData.clear();
-
     while (iteration < maxIterations) {
-        result = solve();
+        Result result = solve(); // Вызываем основное решение
 
-        // Сохранение данных для графика сходимости
-        result.convergenceData.push_back({m_params.n, result.maxError});
-        qDebug() << "Итерация" << iteration << ": n =" << m_params.n << ", maxError =" << result.maxError;
+        // Сохраняем данные для построения графика сходимости
+        convergenceData.push_back({m_params.n, result.maxError});
+        qDebug() << "Итерация" << iteration
+                 << ": n =" << m_params.n
+                 << ", maxError =" << result.maxError;
 
         // Проверяем достижение целевой точности
         if (result.maxError <= targetError) {
             qDebug() << "Целевая точность достигнута.";
+            finalResult = result; // Сохраняем результат
             break;
         }
 
@@ -99,34 +101,33 @@ SolverModel::Result SolverModel::solveWithAccuracy(double targetError) {
         // Завершаем цикл, если ошибка перестала уменьшаться
         if (relativeImprovement < 1e-6) {
             qDebug() << "Сходимость достигнута: относительное улучшение =" << relativeImprovement;
+            finalResult = result; // Сохраняем результат
             break;
         }
 
         previousError = result.maxError;
 
-        // Проверка предельного размера сетки
-        if (m_params.n >= 1e6) {
-            qDebug() << "Размер сетки слишком большой. Невозможно уточнить далее.";
-            break;
-        }
-
         // Удвоение количества разбиений сетки
         m_params.n *= 2;
+        refinedResult = result; // Сохраняем текущий результат как уточнённый
         iteration++;
     }
 
     if (iteration >= maxIterations) {
         qDebug() << "Достигнуто максимальное количество итераций.";
+        finalResult = refinedResult; // Сохраняем последний уточнённый результат
     }
 
-    // Решение на уточнённой сетке
-    refinedResult = solve();
-    result.uRefined = refinedResult.u;
-    result.maxErrorRefined = refinedResult.maxError;
+    // Добавляем данные о сходимости к итоговому результату
+    finalResult.convergenceData = std::move(convergenceData);
+    finalResult.uRefined = refinedResult.u; // Передаём уточнённое решение
+    finalResult.maxErrorRefined = refinedResult.maxError;
 
     m_params = originalParams; // Возврат к исходным параметрам
-    return result;
+    return finalResult;
 }
+
+
 
 std::vector<double> SolverModel::computeCoefficients(double x) {
     // Для данного примера используем постоянные коэффициенты
