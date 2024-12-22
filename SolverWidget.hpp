@@ -37,6 +37,8 @@ private:
     QChartView* m_errorPlot;         // График на основе Qt Charts
     QPushButton* m_solveButton; // Кнопка для запуска расчётов
     QComboBox* m_taskSelector;
+    QTableWidget* m_refinedResultsTable;
+
     // Метод для отображения результатов
     void displayResults(const SolverModel::Result& result, const SolverModel::Result& refinedResult);
 

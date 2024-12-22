@@ -43,6 +43,8 @@ void SolverWidget::setupUI() {
 
     m_solveButton = new QPushButton("Solve", this);
 
+    m_refinedResultsTable = new QTableWidget(this);
+
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     QHBoxLayout* inputLayout = new QHBoxLayout();
 
@@ -59,6 +61,7 @@ void SolverWidget::setupUI() {
     mainLayout->addWidget(m_plot);
     mainLayout->addWidget(m_errorPlot);
     mainLayout->addWidget(m_resultsTable);
+    mainLayout->addWidget(m_refinedResultsTable);
 
     setLayout(mainLayout);
 
@@ -106,7 +109,7 @@ void SolverWidget::displayResults(const SolverModel::Result& result, const Solve
 
     m_infoText->setText(info);
 
-    // Таблица
+    // Таблица основных результатов
     m_resultsTable->clear();
     m_resultsTable->setRowCount(result.x.size());
     m_resultsTable->setColumnCount(4);
@@ -119,6 +122,25 @@ void SolverWidget::displayResults(const SolverModel::Result& result, const Solve
         m_resultsTable->setItem(i, 3, new QTableWidgetItem(QString::number(result.u[i] - result.analytical[i])));
     }
     m_resultsTable->resizeColumnsToContents();
+
+    // Таблица для основной задачи с удвоенной сеткой
+    if (!refinedResult.uRefined.empty()) {
+        m_refinedResultsTable->clear();
+        int refinedSize = refinedResult.x.size();
+        m_refinedResultsTable->setRowCount(refinedSize / 2 + 1);
+        m_refinedResultsTable->setColumnCount(4);
+        m_refinedResultsTable->setHorizontalHeaderLabels({"x_{2i}", "u2(x_{2i})", "v2(x_{2i})", "u2 - v2"});
+
+        for (size_t i = 0; i < m_refinedResultsTable->rowCount(); ++i) {
+            int idx = 2 * i;
+            if (idx >= refinedSize) idx = refinedSize - 1; // Последний индекс
+            m_refinedResultsTable->setItem(i, 0, new QTableWidgetItem(QString::number(refinedResult.x[idx])));
+            m_refinedResultsTable->setItem(i, 1, new QTableWidgetItem(QString::number(refinedResult.uRefined[idx])));
+            m_refinedResultsTable->setItem(i, 2, new QTableWidgetItem(QString::number(refinedResult.analytical[idx])));
+            m_refinedResultsTable->setItem(i, 3, new QTableWidgetItem(QString::number(refinedResult.uRefined[idx] - refinedResult.analytical[idx])));
+        }
+        m_refinedResultsTable->resizeColumnsToContents();
+    }
 
     // График решений
     auto* chart = new QtCharts::QChart();

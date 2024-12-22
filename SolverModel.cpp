@@ -66,33 +66,29 @@ SolverModel::Result SolverModel::solve() {
 SolverModel::Result SolverModel::solveWithAccuracy(double targetError) {
     SolverModel::Params originalParams = m_params;
     SolverModel::Result result;
+    SolverModel::Result refinedResult;
 
-    double previousError = std::numeric_limits<double>::max(); // Предыдущая ошибка
-    double relativeImprovement = 0.0; // Относительное улучшение ошибки
+    double previousError = std::numeric_limits<double>::max();
+    double relativeImprovement = 0.0;
 
     do {
         result = solve();
 
-        // Отладочная информация
         qDebug() << "n =" << m_params.n << ", maxError =" << result.maxError;
 
-        // Проверяем достижение целевой точности
         if (result.maxError <= targetError) {
             break;
         }
 
-        // Вычисляем относительное улучшение ошибки
         relativeImprovement = std::abs(previousError - result.maxError) / previousError;
 
-        // Завершаем цикл, если ошибка перестала уменьшаться
-        if (relativeImprovement < 1e-6) { // Порог сходимости (например, 1e-6)
+        if (relativeImprovement < 1e-6) {
             qDebug() << "Convergence reached: relative improvement =" << relativeImprovement;
             break;
         }
 
         previousError = result.maxError;
 
-        // Проверка предельного размера сетки
         if (m_params.n >= 1e6) {
             qDebug() << "Grid size too large. Cannot refine further.";
             break;
@@ -103,10 +99,14 @@ SolverModel::Result SolverModel::solveWithAccuracy(double targetError) {
 
     } while (true);
 
-    m_params = originalParams; // Возврат к исходным параметрам
+    // Сохраняем решение на удвоенной сетке для основной задачи
+    refinedResult = solve();
+    result.uRefined = refinedResult.u;
+    result.maxErrorRefined = refinedResult.maxError;
+
+    m_params = originalParams;
     return result;
 }
-
 
 std::vector<double> SolverModel::computeCoefficients(double x) {
     // Определение коэффициентов k(x), q(x), f(x)

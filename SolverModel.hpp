@@ -17,8 +17,9 @@ public:
         std::vector<double> u;         // Численное решение
         std::vector<double> analytical; // Аналитическое решение
         double maxError;               // Максимальная ошибка
+        std::vector<double> uRefined;
+        double maxErrorRefined;
     };
-
 
     SolverModel();
     void setParams(const Params& params);
