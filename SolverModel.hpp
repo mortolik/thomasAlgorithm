@@ -9,6 +9,7 @@ public:
         double mu2;     // Граничное условие на правом краю
         double xi;      // Точка разрыва
         int n;          // Количество разбиений
+        double epsilon;  // Заданная точность
     };
 
     struct Result {
@@ -22,6 +23,8 @@ public:
     SolverModel();
     void setParams(const Params& params);
     Result solve();
+    Result solveWithAccuracy(double targetError);
+    double calculateGridError(const Result& coarse, const Result& fine);
 
 private:
     Params m_params;
@@ -34,6 +37,5 @@ private:
     double analyticalSolution(double x); // Аналитическое решение
     double calculateError(const std::vector<double>& numerical,
                           const std::vector<double>& analytical);
-    double calculateGridError(const Result& coarse, const Result& fine);
 };
 

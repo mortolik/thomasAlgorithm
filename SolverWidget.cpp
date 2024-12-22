@@ -1,3 +1,4 @@
+// SolverWidget.cpp
 #include "SolverWidget.hpp"
 #include <QLabel>
 #include <QtCharts/QChart>
@@ -22,6 +23,12 @@ void SolverWidget::setupUI() {
     m_spinBoxN->setRange(2, 10000);
     m_spinBoxN->setValue(10);
 
+    m_spinBoxEpsilon = new QDoubleSpinBox(this);
+    m_spinBoxEpsilon->setRange(0, 1e-2);
+    m_spinBoxEpsilon->setDecimals(10);
+    m_spinBoxEpsilon->setSingleStep(1e-6);
+    m_spinBoxEpsilon->setValue(1e-6);
+
     m_taskSelector = new QComboBox(this);
     m_taskSelector->addItem("Test Task");
     m_taskSelector->addItem("Main Task");
@@ -41,6 +48,8 @@ void SolverWidget::setupUI() {
 
     inputLayout->addWidget(new QLabel("Number of divisions (n):"));
     inputLayout->addWidget(m_spinBoxN);
+    inputLayout->addWidget(new QLabel("Accuracy (epsilon):"));
+    inputLayout->addWidget(m_spinBoxEpsilon);
     inputLayout->addWidget(new QLabel("Task type:"));
     inputLayout->addWidget(m_taskSelector);
     inputLayout->addWidget(m_solveButton);
@@ -65,18 +74,19 @@ void SolverWidget::onSolveButtonClicked() {
     params.mu2 = 0.0;
     params.xi = 0.5; // Точка разрыва для 4-го варианта
     params.n = m_spinBoxN->value();
+    params.epsilon = m_spinBoxEpsilon->value();
 
     m_model->setParams(params);
 
     // Выполнение решения
-    SolverModel::Result result = m_model->solve();
-
-    // Выполнение решения на удвоенной сетке для основной задачи
+    SolverModel::Result result;
     SolverModel::Result refinedResult;
-    if (m_taskSelector->currentIndex() == 1) { // Main Task
-        params.n *= 2;
-        m_model->setParams(params);
-        refinedResult = m_model->solve();
+
+    if (m_taskSelector->currentIndex() == 0) { // Test Task
+        result = m_model->solve();
+    } else { // Main Task
+        result = m_model->solve();
+        refinedResult = m_model->solveWithAccuracy(params.epsilon);
     }
 
     // Отображение результатов
@@ -90,10 +100,7 @@ void SolverWidget::displayResults(const SolverModel::Result& result, const Solve
     info += QString("Maximum error (ε1): %1\n").arg(result.maxError);
 
     if (!refinedResult.x.empty()) {
-        double maxError = 0.0;
-        for (size_t i = 0; i < result.x.size(); ++i) {
-            maxError = std::max(maxError, std::abs(result.u[i] - refinedResult.u[i * 2]));
-        }
+        double maxError = m_model->calculateGridError(result, refinedResult);
         info += QString("Refined grid error (ε2): %1\n").arg(maxError);
     }
 

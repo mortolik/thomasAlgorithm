@@ -30,6 +30,7 @@ private:
     SolverModel* m_model; // Модель для выполнения расчётов
 
     QSpinBox* m_spinBoxN;       // Спинбокс для ввода количества разбиений
+    QDoubleSpinBox* m_spinBoxEpsilon;       // Спинбокс для ввода количества разбиений
     QTextEdit* m_infoText;      // Поле для отображения текстовой информации
     QTableWidget* m_resultsTable; // Таблица для отображения результатов
     QChartView* m_plot;         // График на основе Qt Charts

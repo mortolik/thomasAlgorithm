@@ -2,10 +2,11 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
+#include <QDebug>
 
 SolverModel::SolverModel() {
     // Установка параметров по умолчанию
-    m_params = {0.0, 0.0, 0.5, 10};
+    m_params = {0.0, 0.0, 0.5, 10, 1e-6}; // Добавлен epsilon
 }
 
 void SolverModel::setParams(const Params& params) {
@@ -61,6 +62,51 @@ SolverModel::Result SolverModel::solve() {
 
     return {x, u, analytical, maxError};
 }
+
+SolverModel::Result SolverModel::solveWithAccuracy(double targetError) {
+    SolverModel::Params originalParams = m_params;
+    SolverModel::Result result;
+
+    double previousError = std::numeric_limits<double>::max(); // Предыдущая ошибка
+    double relativeImprovement = 0.0; // Относительное улучшение ошибки
+
+    do {
+        result = solve();
+
+        // Отладочная информация
+        qDebug() << "n =" << m_params.n << ", maxError =" << result.maxError;
+
+        // Проверяем достижение целевой точности
+        if (result.maxError <= targetError) {
+            break;
+        }
+
+        // Вычисляем относительное улучшение ошибки
+        relativeImprovement = std::abs(previousError - result.maxError) / previousError;
+
+        // Завершаем цикл, если ошибка перестала уменьшаться
+        if (relativeImprovement < 1e-6) { // Порог сходимости (например, 1e-6)
+            qDebug() << "Convergence reached: relative improvement =" << relativeImprovement;
+            break;
+        }
+
+        previousError = result.maxError;
+
+        // Проверка предельного размера сетки
+        if (m_params.n >= 1e6) {
+            qDebug() << "Grid size too large. Cannot refine further.";
+            break;
+        }
+
+        // Удвоение количества разбиений сетки
+        m_params.n *= 2;
+
+    } while (true);
+
+    m_params = originalParams; // Возврат к исходным параметрам
+    return result;
+}
+
 
 std::vector<double> SolverModel::computeCoefficients(double x) {
     // Определение коэффициентов k(x), q(x), f(x)
