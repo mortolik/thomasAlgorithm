@@ -20,7 +20,6 @@ public:
 
 private slots:
     void onSolveButtonClicked();
-    void onHelpButtonClicked();
 
 private:
     void setupUI();
@@ -33,7 +32,6 @@ private:
     QDoubleSpinBox* m_spinBoxEpsilon;
     QTextEdit* m_infoText;
     QPushButton* m_solveButton;
-    QPushButton* m_helpButton;
 
     // Вкладки для отображения результатов
     QTabWidget* m_resultsTabWidget;

@@ -35,7 +35,6 @@ void MainTaskWidget::setupUI()
     m_infoText->setReadOnly(true);
 
     m_solveButton = new QPushButton("Solve", this);
-    m_helpButton = new QPushButton("Help", this);
 
     // Создание вкладок для результатов
     m_resultsTabWidget = new QTabWidget(this);
@@ -103,7 +102,6 @@ void MainTaskWidget::setupUI()
     inputLayout->addWidget(new QLabel("Accuracy (epsilon):"));
     inputLayout->addWidget(m_spinBoxEpsilon);
     inputLayout->addWidget(m_solveButton);
-    inputLayout->addWidget(m_helpButton);
 
     mainLayout->addLayout(inputLayout);
     mainLayout->addWidget(m_infoText);
@@ -113,7 +111,6 @@ void MainTaskWidget::setupUI()
 
     // Подключение сигналов и слотов
     connect(m_solveButton, &QPushButton::clicked, this, &MainTaskWidget::onSolveButtonClicked);
-    connect(m_helpButton, &QPushButton::clicked, this, &MainTaskWidget::onHelpButtonClicked);
 }
 
 void MainTaskWidget::onSolveButtonClicked() {
@@ -305,14 +302,3 @@ void MainTaskWidget::displayResults(const SolverModel::Result& result, const Sol
     }
 }
 
-void MainTaskWidget::onHelpButtonClicked() {
-    QString helpText;
-    helpText += "Основная задача:\n";
-    helpText += "1. Установите количество разбиений (n) и точность (epsilon).\n";
-    helpText += "2. Нажмите кнопку 'Solve' для выполнения основной задачи с уточнением сетки.\n";
-    helpText += "3. Результаты решения будут отображены в таблицах и на графиках во вкладках 'Tables' и 'Plots'.\n";
-    helpText += "   - Вкладка 'Tables' содержит основные и уточнённые результаты.\n";
-    helpText += "   - Вкладка 'Plots' содержит графики решений, ошибок и логарифмического графика ошибки.\n";
-
-    QMessageBox::information(this, "Справка", helpText);
-}
