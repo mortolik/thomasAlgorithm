@@ -31,7 +31,10 @@ private:
     QTextEdit* m_infoText;
     QTableWidget* m_resultsTable;
     QtCharts::QChartView* m_plot;
+    QtCharts::QChartView* m_errorPlot;
     QPushButton* m_solveButton;
+
+    QTabWidget* m_tabWidget;
 };
 
 #endif // TESTTASKWIDGET_HPP
